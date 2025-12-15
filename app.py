@@ -23,9 +23,20 @@ def callback():
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
+    user_text = event.message.text
+
+    reply = (
+        "你好, 我是微轉人資助手 🤖\n\n"
+        "你可以直接輸入問題, 例如: \n"
+        "病假規則是什麼? \n"
+        "加班費如何計算? \n"
+        "特休規定有哪些? \n\n"
+        f"你剛剛輸入的是: {user_text}"
+    )
+    
     line_bot_api.reply_message(
         event.reply_token,
-        TextSendMessage(text=f"收到訊息：{event.message.text}")
+        TextSendMessage(text=reply)
     )
 
 if __name__ == "__main__":
