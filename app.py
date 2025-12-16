@@ -40,22 +40,18 @@ def load_kb_meta():
         with open("hr_kb.json", "r", encoding="utf-8") as f:
             data = json.load(f)
 
-        # 新格式：{"meta": {...}, "items": [...]}
-        if isinstance(data, dict):
-            meta = data.get("meta", {})
-            return (
-                meta.get("policy_version", "未標示版次"),
-                meta.get("policy_filename", "未標示檔名"),
-            )
+        meta = data.get("meta", {}) if isinstance(data, dict) else {}
 
-        # 舊格式：list（沒有 meta）
-        return ("未標示版次", "未標示檔名")
+        policy_month = meta.get("policy_month", "未知月份")
+        policy_code  = meta.get("policy_code",  "未知版次")
+        policy_name  = meta.get("policy_name",  "未知辦法")
 
+        return policy_month, policy_code, policy_name
     except Exception:
-        return ("未標示版次", "未標示檔名")
+        return "未知月份", "未知版次", "未知辦法"
 
 
-POLICY_VERSION, POLICY_FILENAME = load_kb_meta()
+POLICY_MONTH, POLICY_CODE, POLICY_NAME = load_kb_meta()
 # ===== 讀取 HR 知識庫版本資訊 結束=====
 
 
@@ -109,6 +105,9 @@ def handle_message(event):
 
     # 回覆前綴：顯示依據哪個版本規章
 prefix = f"📌 根據 {POLICY_VERSION}（{POLICY_FILENAME}）內容回覆：\n\n"
+
+# 你想要的前綴格式
+prefix = f"📌 根據 {POLICY_MONTH} 的 {POLICY_CODE} 版本{POLICY_NAME}內容回覆：\n\n"
 
 # 組合成給員工看的回覆
 if should_show_intro:
