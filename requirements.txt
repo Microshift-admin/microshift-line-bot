@@ -1,3 +1,4 @@
 flask
 line-bot-sdk
 openai>=1.0.0
+python-docx
