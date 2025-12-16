@@ -2,6 +2,7 @@
 from flask import Flask, request, abort
 import os
 import time
+import json
 from openai import OpenAI
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
@@ -32,6 +33,30 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 line_bot_api = LineBotApi(os.getenv("LINE_CHANNEL_ACCESS_TOKEN"))
 handler = WebhookHandler(os.getenv("LINE_CHANNEL_SECRET"))
 # ===== 建立物件 結束 =====
+
+# ===== 讀取 HR 知識庫版本資訊（hr_kb.json）=====
+def load_kb_meta():
+    try:
+        with open("hr_kb.json", "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        # 新格式：{"meta": {...}, "items": [...]}
+        if isinstance(data, dict):
+            meta = data.get("meta", {})
+            return (
+                meta.get("policy_version", "未標示版次"),
+                meta.get("policy_filename", "未標示檔名"),
+            )
+
+        # 舊格式：list（沒有 meta）
+        return ("未標示版次", "未標示檔名")
+
+    except Exception:
+        return ("未標示版次", "未標示檔名")
+
+
+POLICY_VERSION, POLICY_FILENAME = load_kb_meta()
+# ===== 讀取 HR 知識庫版本資訊 結束=====
 
 
 # ===== callback Webhook 接收 =====
@@ -82,11 +107,14 @@ def handle_message(event):
 
     gpt_answer = response.choices[0].message.content.strip()
 
-    # 組合成給員工看的回覆
-    if should_show_intro:
-        reply_text = f"{HR_INTRO_TEXT}\n📖【HR AI 助手回覆】\n{gpt_answer}"
-    else:
-        reply_text = f"{gpt_answer}"
+    # 回覆前綴：顯示依據哪個版本規章
+prefix = f"📌 根據 {POLICY_VERSION}（{POLICY_FILENAME}）內容回覆：\n\n"
+
+# 組合成給員工看的回覆
+if should_show_intro:
+    reply_text = f"{HR_INTRO_TEXT}\n{prefix}{gpt_answer}"
+else:
+    reply_text = f"{prefix}{gpt_answer}"
 
     line_bot_api.reply_message(
         event.reply_token,
