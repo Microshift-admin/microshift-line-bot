@@ -104,7 +104,7 @@ def handle_message(event):
     gpt_answer = response.choices[0].message.content.strip()
 
 # 你想要的前綴格式
-prefix = f"📌 根據 {POLICY_MONTH} 的 {POLICY_CODE} 版本{POLICY_NAME}內容回覆：\n\n"
+    prefix = f"📌 根據 {POLICY_MONTH} 的 {POLICY_CODE} 版本{POLICY_NAME}內容回覆：\n\n"
 
     # 組合成給員工看的回覆
     if should_show_intro:
