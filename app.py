@@ -103,17 +103,14 @@ def handle_message(event):
 
     gpt_answer = response.choices[0].message.content.strip()
 
-    # 回覆前綴：顯示依據哪個版本規章
-prefix = f"📌 根據 {POLICY_VERSION}（{POLICY_FILENAME}）內容回覆：\n\n"
-
 # 你想要的前綴格式
 prefix = f"📌 根據 {POLICY_MONTH} 的 {POLICY_CODE} 版本{POLICY_NAME}內容回覆：\n\n"
 
-# 組合成給員工看的回覆
-if should_show_intro:
-    reply_text = f"{HR_INTRO_TEXT}\n{prefix}{gpt_answer}"
-else:
-    reply_text = f"{prefix}{gpt_answer}"
+    # 組合成給員工看的回覆
+    if should_show_intro:
+        reply_text = f"{HR_INTRO_TEXT}\n{prefix}{gpt_answer}"
+    else:
+        reply_text = f"{prefix}{gpt_answer}"
 
     line_bot_api.reply_message(
         event.reply_token,
