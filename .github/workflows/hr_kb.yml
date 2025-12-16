@@ -3,18 +3,24 @@ name: Build HR KB
 on:
   push:
     paths:
-      - "*.pdf"
+      - "**/*.pdf"
       - "build_hr_kb.py"
       - "requirements.txt"
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repo
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: true
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -28,33 +34,47 @@ jobs:
           pip install pdfplumber
 
       - name: Pick latest HR policy PDF and copy to hr_policy.pdf
+        shell: bash
         run: |
           echo "== List PDFs in repo =="
           find . -type f -iname "*.pdf" ! -path "./.git/*" -print
 
           echo "== Pick latest modified PDF in repo =="
-          latest_pdf=$(find . -type f -iname "*.pdf" ! -path "./.git/*" -print0 | xargs -0 ls -t | head -n 1)
+          latest_pdf=$(find . -type f -iname "*.pdf" ! -path "./.git/*" ! -name "hr_policy.pdf" -printf "%T@ %p\n" | sort -nr | head -n 1 | cut -d' ' -f2-)
 
-          echo "Latest PDF: $latest_pdf"
           if [ -z "$latest_pdf" ]; then
             echo "❌ No PDF found in repo."
             exit 1
           fi
 
+          echo "Latest PDF: $latest_pdf"
           cp "$latest_pdf" ./hr_policy.pdf
           echo "✅ Copied to ./hr_policy.pdf"
           ls -la ./hr_policy.pdf
+
+          base_name=$(basename "$latest_pdf")
+          echo "HR_POLICY_FILENAME=$base_name" >> $GITHUB_ENV
+          echo "✅ Export HR_POLICY_FILENAME=$base_name"
 
       - name: Build knowledge base
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
+          echo "HR_POLICY_FILENAME from env: $HR_POLICY_FILENAME"
           python build_hr_kb.py
 
       - name: Commit outputs
+        shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add hr_policy.pdf hr_kb.json
-          git commit -m "Auto update HR KB" || echo "No changes"
+
+          git add hr_policy.pdf hr_kb.json || true
+
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+
+          git commit -m "Auto update HR KB"
           git push
