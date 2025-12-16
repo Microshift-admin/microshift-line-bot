@@ -3,7 +3,7 @@ name: Build HR KB
 on:
   push:
     paths:
-      - "**/*.pdf"
+      - "**/*.docx"
       - "build_hr_kb.py"
       - "requirements.txt"
   workflow_dispatch:
@@ -33,26 +33,26 @@ jobs:
           pip install -r requirements.txt
           pip install pdfplumber
 
-      - name: Pick latest HR policy PDF and copy to hr_policy.pdf
+      - name: Pick latest HR policy PDF and copy to hr_policy.docx
         shell: bash
         run: |
-          echo "== List PDFs in repo =="
-          find . -type f -iname "*.pdf" ! -path "./.git/*" -print
+          echo "== List DOCX in repo =="
+          find . -type f -iname "*.docx" ! -path "./.git/*" -print
 
-          echo "== Pick latest modified PDF in repo =="
-          latest_pdf=$(find . -type f -iname "*.pdf" ! -path "./.git/*" ! -name "hr_policy.pdf" -printf "%T@ %p\n" | sort -nr | head -n 1 | cut -d' ' -f2-)
+          echo "== Pick latest modified DOCX in repo =="
+          latest_docx=$(find . -type f -iname "*.docx" ! -path "./.git/*" ! -name "hr_policy.docx" -printf "%T@ %p\n" | sort -nr | head -n 1 | cut -d' ' -f2-)
 
-          if [ -z "$latest_pdf" ]; then
-            echo "❌ No PDF found in repo."
+          if [ -z "$latest_docx" ]; then
+            echo "❌ No DOCX found in repo."
             exit 1
           fi
 
-          echo "Latest PDF: $latest_pdf"
-          cp "$latest_pdf" ./hr_policy.pdf
-          echo "✅ Copied to ./hr_policy.pdf"
-          ls -la ./hr_policy.pdf
+          echo "Latest DOCX: $latest_docx"
+          cp "$latest_docx" ./hr_policy.docx
+          echo "✅ Copied to ./hr_policy.docx"
+          ls -la ./hr_policy.docx
 
-          base_name=$(basename "$latest_pdf")
+          base_name=$(basename "$latest_docx")
           echo "HR_POLICY_FILENAME=$base_name" >> $GITHUB_ENV
           echo "✅ Export HR_POLICY_FILENAME=$base_name"
 
@@ -69,7 +69,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          git add hr_policy.pdf hr_kb.json || true
+          git add hr_policy.docx hr_kb.json || true
 
           if git diff --cached --quiet; then
             echo "No changes to commit."
