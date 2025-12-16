@@ -10,21 +10,27 @@ client = OpenAI()
 PDF_PATH = "hr_policy.pdf"
 OUTPUT_PATH = "hr_kb.json"
 
-def parse_version(filename: str) -> str:
-    # 從檔名抓 HR-103-03 這種版次
-    m = re.search(r"(HR-\d{3}-\d{2})", filename, re.IGNORECASE)
-    if m:
-        return m.group(1).upper()
-    # 抓不到就用去副檔名後的檔名
-    return os.path.splitext(filename)[0]
-
-# 由 GitHub Actions 傳入原始檔名；本機跑就會是 hr_policy.pdf
+# ===== 從檔名解析人資規章資訊 =====
 ORIGINAL_FILENAME = os.getenv("HR_POLICY_FILENAME", PDF_PATH)
-POLICY_VERSION = parse_version(ORIGINAL_FILENAME)
+filename = os.path.basename(ORIGINAL_FILENAME)
+
+# 支援格式：HR-103-04_出勤管理辦法_202509.pdf
+m = re.match(r"(HR-\d+-\d+)_(.+)_(\d{6})\.pdf", filename)
+
+if m:
+    POLICY_CODE = m.group(1)      # HR-103-04
+    POLICY_NAME = m.group(2)      # 出勤管理辦法
+    POLICY_MONTH = m.group(3)     # 202509
+else:
+    POLICY_CODE = "未知版次"
+    POLICY_NAME = "未知辦法"
+    POLICY_MONTH = "未知月份"
 
 META = {
-    "policy_filename": ORIGINAL_FILENAME,
-    "policy_version": POLICY_VERSION,
+    "policy_code": POLICY_CODE,
+    "policy_name": POLICY_NAME,
+    "policy_month": POLICY_MONTH,
+    "source_filename": filename,
     "generated_at_utc": datetime.now(timezone.utc).isoformat(),
 }
 
@@ -71,4 +77,4 @@ output = {
 with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
     json.dump(output, f, ensure_ascii=False, indent=2)
 
-print(f"HR 知識庫建立完成：hr_kb.json（版次：{POLICY_VERSION}）")
+print(f"HR 知識庫建立完成：hr_kb.json（{POLICY_MONTH} / {POLICY_CODE} / {POLICY_NAME}）")
