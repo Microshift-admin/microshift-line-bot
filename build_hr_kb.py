@@ -68,6 +68,7 @@ for item in all_chunks:
     )
     item["embedding"] = emb.data[0].embedding
 
+
 # 存成檔案
 output = {
     "meta": META,
