@@ -29,13 +29,21 @@ jobs:
 
       - name: Pick latest HR policy PDF and copy to hr_policy.pdf
         run: |
-          latest_pdf=$(git diff --name-only HEAD~1 HEAD -- '*.pdf' | head -n 1)
-          if [ -z "$latest_pdf" ]; then
-            echo "No PDF changed in this push. Skipping."
-            exit 0
-          fi
+          echo "== List PDFs in repo =="
+          find . -type f -iname "*.pdf" ! -path "./.git/*" -print
+
+          echo "== Pick latest modified PDF in repo =="
+          latest_pdf=$(find . -type f -iname "*.pdf" ! -path "./.git/*" -print0 | xargs -0 ls -t | head -n 1)
+
           echo "Latest PDF: $latest_pdf"
-          cp "$latest_pdf" hr_policy.pdf
+          if [ -z "$latest_pdf" ]; then
+            echo "❌ No PDF found in repo."
+            exit 1
+          fi
+
+          cp "$latest_pdf" ./hr_policy.pdf
+          echo "✅ Copied to ./hr_policy.pdf"
+          ls -la ./hr_policy.pdf
 
       - name: Build knowledge base
         env:
