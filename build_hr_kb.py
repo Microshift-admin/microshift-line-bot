@@ -4,7 +4,7 @@ from openai import OpenAI
 
 client = OpenAI()
 
-PDF_PATH = "HR-103-03_出勤管理辦法_202509.pdf"
+PDF_PATH = "hr_policy.pdf"
 OUTPUT_PATH = "hr_kb.json"
 
 def chunk_text(text, chunk_size=500, overlap=100):
