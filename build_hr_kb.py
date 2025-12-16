@@ -1,4 +1,4 @@
-import pdfplumber
+from docx import Document
 import json
 from openai import OpenAI
 import os
@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 
 client = OpenAI()
 
-PDF_PATH = "hr_policy.pdf"
+DOCX_PATH = "hr_policy.docx"
 OUTPUT_PATH = "hr_kb.json"
 
 # ===== 從檔名解析人資規章資訊 =====
@@ -43,20 +43,32 @@ def chunk_text(text, chunk_size=500, overlap=100):
         start = end - overlap
     return chunks
 
+def read_docx_text(path: str) -> str:
+    doc = Document(path)
+    parts = []
+    for p in doc.paragraphs:
+        t = (p.text or "").strip()
+        if t:
+            parts.append(t)
+
+    # 如果你的規章很多表格，這段會把表格也抓進來（很重要）
+    for table in doc.tables:
+        for row in table.rows:
+            cells = [(c.text or "").strip() for c in row.cells]
+            line = " | ".join([c for c in cells if c])
+            if line.strip():
+                parts.append(line)
+
+    return "\n".join(parts)
+
+full_text = read_docx_text(DOCX_PATH)
+
 all_chunks = []
-
-with pdfplumber.open(PDF_PATH) as pdf:
-    for i, page in enumerate(pdf.pages):
-        text = page.extract_text()
-        if not text:
-            continue
-
-        chunks = chunk_text(text)
-        for chunk in chunks:
-            all_chunks.append({
-                "page": i + 1,
-                "text": chunk
-            })
+for chunk in chunk_text(full_text):
+    all_chunks.append({
+        "page": 1,   # docx 沒有頁碼概念，先固定 1
+        "text": chunk
+    })
 
 print(f"共產生 {len(all_chunks)} 個文字段落")
 
