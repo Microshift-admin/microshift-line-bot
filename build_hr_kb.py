@@ -11,11 +11,11 @@ DOCX_PATH = "hr_policy.docx"
 OUTPUT_PATH = "hr_kb.json"
 
 # ===== 從檔名解析人資規章資訊 =====
-ORIGINAL_FILENAME = os.getenv("HR_POLICY_FILENAME", PDF_PATH)
+ORIGINAL_FILENAME = os.getenv("HR_POLICY_FILENAME", DOCX_PATH)
 filename = os.path.basename(ORIGINAL_FILENAME)
 
-# 支援格式：HR-103-04_出勤管理辦法_202509.pdf
-m = re.match(r"(HR-\d+-\d+)_(.+)_(\d{6})\.pdf", filename)
+# 支援格式：HR-103-04_出勤管理辦法_202509.docx
+m = re.match(r"(HR-\d+-\d+)_(.+)_(\d{6})\.docx", filename)
 
 if m:
     POLICY_CODE = m.group(1)      # HR-103-04
