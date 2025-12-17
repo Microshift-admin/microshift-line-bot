@@ -3,10 +3,11 @@ name: Build HR KB
 on:
   push:
     paths:
-      - "policies/**/*.docx"
+      - "policies/**.docx"
       - "build_hr_kb.py"
       - "requirements.txt"
       - ".github/workflows/hr_kb.yml"
+  workflow_dispatch: {}
 
 permissions:
   contents: write
@@ -41,6 +42,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add hr_kb.json hr_kb_index.json
-          git commit -m "Auto update HR KB" || echo "No changes"
+          git add hr_kb_index.json
+          git commit -m "Auto update HR KB index" || echo "No changes"
           git push
