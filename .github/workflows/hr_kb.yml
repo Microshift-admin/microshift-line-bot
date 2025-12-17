@@ -3,10 +3,10 @@ name: Build HR KB
 on:
   push:
     paths:
-      - "**/*.docx"
+      - "policies/**/*.docx"
       - "build_hr_kb.py"
       - "requirements.txt"
-  workflow_dispatch:
+      - ".github/workflows/hr_kb.yml"
 
 permissions:
   contents: write
@@ -16,11 +16,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          persist-credentials: true
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -31,50 +29,18 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pdfplumber
-
-      - name: Pick latest HR policy PDF and copy to hr_policy.docx
-        shell: bash
-        run: |
-          echo "== List DOCX in repo =="
-          find . -type f -iname "*.docx" ! -path "./.git/*" -print
-
-          echo "== Pick latest modified DOCX in repo =="
-          latest_docx=$(find . -type f -iname "*.docx" ! -path "./.git/*" ! -name "hr_policy.docx" -printf "%T@ %p\n" | sort -nr | head -n 1 | cut -d' ' -f2-)
-
-          if [ -z "$latest_docx" ]; then
-            echo "❌ No DOCX found in repo."
-            exit 1
-          fi
-
-          echo "Latest DOCX: $latest_docx"
-          cp "$latest_docx" ./hr_policy.docx
-          echo "✅ Copied to ./hr_policy.docx"
-          ls -la ./hr_policy.docx
-
-          base_name=$(basename "$latest_docx")
-          echo "HR_POLICY_FILENAME=$base_name" >> $GITHUB_ENV
-          echo "✅ Export HR_POLICY_FILENAME=$base_name"
+          pip install python-docx
 
       - name: Build knowledge base
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
-          echo "HR_POLICY_FILENAME from env: $HR_POLICY_FILENAME"
           python build_hr_kb.py
 
       - name: Commit outputs
-        shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          git add hr_policy.docx hr_kb.json || true
-
-          if git diff --cached --quiet; then
-            echo "No changes to commit."
-            exit 0
-          fi
-
-          git commit -m "Auto update HR KB"
+          git add hr_kb.json hr_kb_index.json
+          git commit -m "Auto update HR KB" || echo "No changes"
           git push
