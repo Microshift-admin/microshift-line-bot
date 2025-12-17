@@ -3,7 +3,9 @@ import os
 import time
 import json
 import math
+from collections import Counter
 from openai import OpenAI
+
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage
@@ -25,16 +27,16 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 line_bot_api = LineBotApi(os.getenv("LINE_CHANNEL_ACCESS_TOKEN"))
 handler = WebhookHandler(os.getenv("LINE_CHANNEL_SECRET"))
 
-# ===== 載入 HR KB（在啟動時讀一次）=====
-KB_PATH = os.path.join(os.path.dirname(__file__), "hr_kb.json")
-with open(KB_PATH, "r", encoding="utf-8") as f:
+# ===== 讀取 HR KB Index（啟動時讀一次）=====
+KB_INDEX_PATH = os.path.join(os.path.dirname(__file__), "hr_kb_index.json")
+with open(KB_INDEX_PATH, "r", encoding="utf-8") as f:
     KB = json.load(f)
 
 KB_META = KB.get("meta", {})
 KB_ITEMS = KB.get("items", [])
 
+# ===== 向量相似度 =====
 def cosine_sim(a, b):
-    # a,b: list[float]
     dot = 0.0
     na = 0.0
     nb = 0.0
@@ -46,14 +48,12 @@ def cosine_sim(a, b):
         return 0.0
     return dot / (math.sqrt(na) * math.sqrt(nb))
 
-def retrieve_chunks(query: str, top_k: int = 5):
-    # 1) query embedding
+def retrieve_chunks(query: str, top_k: int = 6):
     q_emb = client.embeddings.create(
         model="text-embedding-3-small",
         input=query
     ).data[0].embedding
 
-    # 2) compute similarity
     scored = []
     for it in KB_ITEMS:
         emb = it.get("embedding")
@@ -66,25 +66,39 @@ def retrieve_chunks(query: str, top_k: int = 5):
     scored.sort(key=lambda x: x[0], reverse=True)
     top = scored[:top_k]
 
-    # 3) 組成引用文字（含頁碼）
     refs = []
     for s, it in top:
         refs.append({
             "score": float(s),
-            "page": it.get("page"),
-            "text": it.get("text", "").strip()
+            "policy_month": it.get("policy_month", "未知月份"),
+            "policy_code": it.get("policy_code", "未知版次"),
+            "policy_name": it.get("policy_name", "未知辦法"),
+            "source_filename": it.get("source_filename", ""),
+            "chunk_id": it.get("chunk_id", 0),
+            "text": (it.get("text", "") or "").strip()
         })
     return refs
 
-# ===== callback Webhook =====
+def pick_best_policy(refs):
+    # 用 top refs 的「多數決」選最像哪一份文件；平手就取最高分那份
+    if not refs:
+        return ("未知月份", "未知版次", "未知辦法")
+    keys = [(r["policy_month"], r["policy_code"], r["policy_name"]) for r in refs]
+    c = Counter(keys)
+    best_key, _ = c.most_common(1)[0]
+    return best_key
+
+# ===== callback Webhook 接收 =====
 @app.route("/callback", methods=["POST"])
 def callback():
     signature = request.headers.get("X-Line-Signature")
     body = request.get_data(as_text=True)
+
     try:
         handler.handle(body, signature)
     except InvalidSignatureError:
         abort(400)
+
     return "OK"
 
 # ===== handler：HR + RAG + GPT =====
@@ -98,31 +112,36 @@ def handle_message(event):
     should_show_intro = (last is None) or ((now - last) > INTRO_COOLDOWN_SECONDS)
     last_seen[user_id] = now
 
-    # 取出 KB meta（你要的「根據 202509 的 HR-103-04 版本出勤管理辦法」）
-    policy_month = KB_META.get("policy_month", "未知月份")
-    policy_code = KB_META.get("policy_code", "未知版次")
-    policy_name = KB_META.get("policy_name", "未知辦法")
-
-    prefix = f"📌 根據 {policy_month} 的 {policy_code} 版本《{policy_name}》內容回覆：\n"
-
-    # ===== RAG：找最相關條文段落 =====
-    refs = retrieve_chunks(user_text, top_k=5)
-
-    # 可加一道「相關性門檻」：太不相關就直接請洽人資
-    # 你可先用 0.25~0.35 之間測試（依文件品質調整）
+    # 1) RAG 找引用段落
+    refs = retrieve_chunks(user_text, top_k=6)
     best_score = refs[0]["score"] if refs else 0.0
-    if best_score < 0.25:
-        gpt_answer = "此問題在目前管理辦法引用內容中找不到明確依據，請洽人資專員。"
-    else:
-        # 把引用段落塞進 prompt（非常重要）
-        context_block = "\n\n".join(
-            [f"[頁 {r['page']}] {r['text']}" for r in refs]
-        )
 
-        prompt = f"""
+    # 門檻：太低就直接請洽人資（避免亂掰/泛回答）
+    THRESHOLD = 0.28
+
+    if best_score < THRESHOLD:
+        reply_core = "此問題在目前規章引用內容中找不到明確依據，請洽人資專員。"
+        # prefix 仍可顯示（但這裡不顯示也可以，你若想不顯示我也能改）
+        reply_text = f"{HR_INTRO_TEXT}\n{reply_core}" if should_show_intro else reply_core
+
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text=reply_text)
+        )
+        return
+
+    policy_month, policy_code, policy_name = pick_best_policy(refs)
+    prefix = f"📌 根據 {policy_month} 的 {policy_code} 版本《{policy_name}》內容回覆：\n\n"
+
+    # 2) 把引用內容塞給 GPT（強制只能依引用回答）
+    context_block = "\n\n".join(
+        [f"[{r['policy_code']}#{r['chunk_id']}] {r['text']}" for r in refs]
+    )
+
+    prompt = f"""
 你是 microSHIFT 公司的 HR 人資助理。
-你**只能**依據「引用內容」回答，不得使用一般常識或網路資訊補充。
-如果引用內容不足以回答，請回覆：「此問題在目前管理辦法引用內容中找不到明確依據，請洽人資專員。」
+你**只能根據**下方【引用內容】回答，禁止使用一般常識、網路資訊或推測補充。
+如果【引用內容】不足以回答，請回覆：「此問題在目前規章引用內容中找不到明確依據，請洽人資專員。」
 
 【引用內容】
 {context_block}
@@ -131,22 +150,24 @@ def handle_message(event):
 {user_text}
 
 【回答要求】
-- 用員工問題的語言回覆
-- 清楚、簡短、條列式優先
-- 如有條文條件或例外，要明確寫出
+- 用繁體中文
+- 專業、清楚
+- 優先用條列
+- 若有條件/例外，需講清楚
 """
 
-        resp = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": "你是公司內部 HR Bot（嚴格引用文件回答）"},
-                {"role": "user", "content": prompt},
-            ],
-            temperature=0.1,
-        )
-        gpt_answer = resp.choices[0].message.content.strip()
+    resp = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": "你是公司內部 HR Bot（只能依引用內容回答）"},
+            {"role": "user", "content": prompt}
+        ],
+        temperature=0.1
+    )
 
-    # 組合回覆
+    gpt_answer = resp.choices[0].message.content.strip()
+
+    # 3) 組合成給員工看的回覆
     if should_show_intro:
         reply_text = f"{HR_INTRO_TEXT}\n{prefix}{gpt_answer}"
     else:
