@@ -1,0 +1,87 @@
+{
+  "generated_at_utc": "2025-12-17T08:21:21.378804+00:00",
+  "policies_dir": "policies",
+  "policies": [
+    {
+      "policy_code": "HR-103-03",
+      "policy_name": "出勤管理辦法",
+      "policy_month": "202509",
+      "source_filename": "HR-103-03_出勤管理辦法_202509.docx",
+      "policy_id": "HR-103-03_202509",
+      "source_path": "policies/HR-103-03_出勤管理辦法_202509.docx",
+      "updated_at_utc": "2025-12-17T08:21:21.378804+00:00"
+    },
+    {
+      "policy_code": "QP-213-05",
+      "policy_name": "離職管理辦法",
+      "policy_month": "202507",
+      "source_filename": "QP-213-05_離職管理辦法_202507.docx",
+      "policy_id": "QP-213-05_202507",
+      "source_path": "policies/QP-213-05_離職管理辦法_202507.docx",
+      "updated_at_utc": "2025-12-17T08:21:21.378804+00:00"
+    },
+    {
+      "policy_code": "QP-212-02",
+      "policy_name": "公傷事故處理及調查管理辦法",
+      "policy_month": "202412",
+      "source_filename": "QP-212-02_公傷事故處理及調查管理辦法_202412.docx",
+      "policy_id": "QP-212-02_202412",
+      "source_path": "policies/QP-212-02_公傷事故處理及調查管理辦法_202412.docx",
+      "updated_at_utc": "2025-12-17T08:21:21.378804+00:00"
+    },
+    {
+      "policy_code": "QP-212-01",
+      "policy_name": "員工申訴管道管理規定",
+      "policy_month": "202412",
+      "source_filename": "QP-212-01_員工申訴管道管理規定_202412.docx",
+      "policy_id": "QP-212-01_202412",
+      "source_path": "policies/QP-212-01_員工申訴管道管理規定_202412.docx",
+      "updated_at_utc": "2025-12-17T08:21:21.378804+00:00"
+    },
+    {
+      "policy_code": "QP-213-02",
+      "policy_name": "職務代理人管理辦法",
+      "policy_month": "202409",
+      "source_filename": "QP-213-02_職務代理人管理辦法_202409.docx",
+      "policy_id": "QP-213-02_202409",
+      "source_path": "policies/QP-213-02_職務代理人管理辦法_202409.docx",
+      "updated_at_utc": "2025-12-17T08:21:21.378804+00:00"
+    },
+    {
+      "policy_code": "QP-212-04",
+      "policy_name": "提案改善管理辦法",
+      "policy_month": "202312",
+      "source_filename": "QP-212-04_提案改善管理辦法_202312.docx",
+      "policy_id": "QP-212-04_202312",
+      "source_path": "policies/QP-212-04_提案改善管理辦法_202312.docx",
+      "updated_at_utc": "2025-12-17T08:21:21.378804+00:00"
+    },
+    {
+      "policy_code": "QP-212-03",
+      "policy_name": "5S管理辦法",
+      "policy_month": "202312",
+      "source_filename": "QP-212-03_5S管理辦法_202312.docx",
+      "policy_id": "QP-212-03_202312",
+      "source_path": "policies/QP-212-03_5S管理辦法_202312.docx",
+      "updated_at_utc": "2025-12-17T08:21:21.378804+00:00"
+    },
+    {
+      "policy_code": "HR-101-01",
+      "policy_name": "員工守則",
+      "policy_month": "202308",
+      "source_filename": "HR-101-01_員工守則_202308.docx",
+      "policy_id": "HR-101-01_202308",
+      "source_path": "policies/HR-101-01_員工守則_202308.docx",
+      "updated_at_utc": "2025-12-17T08:21:21.378804+00:00"
+    },
+    {
+      "policy_code": "未知版次",
+      "policy_name": "未知辦法",
+      "policy_month": "未知月份",
+      "source_filename": "QP-212-07 國內外出差管理辦法_202509.docx",
+      "policy_id": "未知版次_未知月份",
+      "source_path": "policies/QP-212-07 國內外出差管理辦法_202509.docx",
+      "updated_at_utc": "2025-12-17T08:21:21.378804+00:00"
+    }
+  ]
+}
