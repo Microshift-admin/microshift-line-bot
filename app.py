@@ -21,6 +21,14 @@ HR_INTRO_TEXT = (
 INTRO_COOLDOWN_SECONDS = 60 * 60 * 12  # 12 小時
 last_seen = {}
 
+# ===== 免責聲明（固定文字，不交給 GPT）=====
+AI_DISCLAIMER_TEXT = (
+    "\n\n——\n"
+    "本回覆由微轉人資 AI 助理依據現行內部規章文件摘要提供，"
+    "如內容與實際狀況或正式公告有差異，"
+    "請以最新公告為準，如有疑慮請洽人資部/所屬單位主管確認。"
+)
+
 # ===== 建立 Flask / OpenAI / LINE 物件 =====
 app = Flask(__name__)
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -169,9 +177,16 @@ def handle_message(event):
 
     # 3) 組合成給員工看的回覆
     if should_show_intro:
-        reply_text = f"{HR_INTRO_TEXT}\n{prefix}{gpt_answer}"
+        reply_text = （
+            f"{HR_INTRO_TEXT}\n"
+            f"{prefix}{gpt_answer}"
+            f"{AI_DISCLAIMER_TEXT)"
+        )
     else:
-        reply_text = f"{prefix}{gpt_answer}"
+        reply_text = (
+            f"{prefix}{gpt_answer}"
+            f"{AI_DISCLAIMER_TEXT}"
+        )
 
     line_bot_api.reply_message(
         event.reply_token,
