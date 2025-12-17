@@ -180,7 +180,7 @@ def handle_message(event):
         reply_text = (
             f"{HR_INTRO_TEXT}\n"
             f"{prefix}{gpt_answer}"
-            f"{AI_DISCLAIMER_TEXT)"
+            f"{AI_DISCLAIMER_TEXT}"
         )
     else:
         reply_text = (
