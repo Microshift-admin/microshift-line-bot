@@ -177,7 +177,7 @@ def handle_message(event):
 
     # 3) 組合成給員工看的回覆
     if should_show_intro:
-        reply_text = （
+        reply_text = (
             f"{HR_INTRO_TEXT}\n"
             f"{prefix}{gpt_answer}"
             f"{AI_DISCLAIMER_TEXT)"
