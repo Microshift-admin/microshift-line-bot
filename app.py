@@ -137,18 +137,18 @@ def is_followup(user_text: str, lang: str, prev_q: str, prev_t: float) -> bool:
         if t.startswith(follow_starts) or any(w in t for w in refer_words):
             return True
         # 很短且是問句
-        if len(t) <= 25 and ("嗎" in t or "?" in t or "？" in t):
+        if len(t) <= 8 and ("嗎" in t or "?" in t or "？" in t):
             return True
 
     elif lang == "en":
-        if len(t) <= 30:
+        if len(t) <= 20:
             return True
         follow_starts = ("what about", "and", "also", "so", "then", "in that case", "does it", "do I", "will it", "is it")
         if any(t.lower().startswith(s) for s in follow_starts):
             return True
 
     else:  # vi
-        if len(t) <= 35:
+        if len(t) <= 20:
             return True
         follow_starts = ("còn", "vậy", "thế", "nếu", "và", "có", "có bị", "có được", "thì")
         if any(t.lower().startswith(s) for s in follow_starts):
